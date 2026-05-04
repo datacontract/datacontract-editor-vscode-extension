@@ -17,6 +17,18 @@ The editor provides a rich UI with Monaco-based YAML editing, schema validation,
 
 ---
 
+## Platform compatibility
+
+| Platform | Status |
+|---|---|
+| Windows (WSL2) | Tested |
+| Linux (native) | Tested |
+| macOS | Not yet tested |
+
+> macOS support is expected to work in principle (same Node.js / npx path), but has not been verified. If you try it, please [open an issue](https://github.com/gkoenig/vscode-datacontract-editor/issues) and let us know whether it works.
+
+---
+
 ## Requirements
 
 - **Node.js 18+** and **npm** must be installed and available on your `PATH`

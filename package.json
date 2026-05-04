@@ -1,0 +1,108 @@
+{
+  "name": "vscode-datacontract-editor",
+  "displayName": "Data Contract Editor",
+  "description": "Open ODCS-compliant data contracts in the Data Contract Editor within VS Code",
+  "version": "0.1.1",
+  "publisher": "gkoenig",
+  "license": "MIT",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gkoenig/vscode-datacontract-editor"
+  },
+  "bugs": {
+    "url": "https://github.com/gkoenig/vscode-datacontract-editor/issues"
+  },
+  "engines": {
+    "vscode": "^1.110.0"
+  },
+  "categories": [
+    "Other",
+    "Data Science"
+  ],
+  "keywords": [
+    "data contract",
+    "ODCS",
+    "datacontract",
+    "data quality",
+    "yaml"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "datacontract-editor.open",
+        "title": "Open in Data Contract Editor",
+        "category": "Data Contract"
+      },
+      {
+        "command": "datacontract-editor.stop",
+        "title": "Stop Data Contract Editor Server",
+        "category": "Data Contract"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "datacontract-editor.open",
+          "when": "resourceExtname == .yaml || resourceExtname == .yml",
+          "group": "navigation@99"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "datacontract-editor.open",
+          "when": "resourceExtname == .yaml || resourceExtname == .yml",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "datacontract-editor.open"
+        },
+        {
+          "command": "datacontract-editor.stop"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Data Contract Editor",
+      "properties": {
+        "datacontractEditor.port": {
+          "type": "number",
+          "default": 4173,
+          "description": "Port for the local Data Contract Editor server"
+        },
+        "datacontractEditor.openIn": {
+          "type": "string",
+          "enum": [
+            "simpleBrowser",
+            "externalBrowser"
+          ],
+          "enumDescriptions": [
+            "Open inside VS Code using the built-in Simple Browser panel",
+            "Open in the system default web browser"
+          ],
+          "default": "simpleBrowser",
+          "description": "Where to open the Data Contract Editor. You are asked once on first use; change this setting to switch at any time."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.110.0",
+    "@vscode/vsce": "^3.9.1",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,18 @@
+# Development tooling — not needed in the packaged extension
+.vscode/**
+.claude/**
+.vscode-test/**
+src/**
+esbuild.js
+tsconfig.json
+.eslintrc.json
+.gitignore
+package-lock.json
+
+# Source maps and TypeScript sources
+**/*.ts
+**/*.map
+
+# Runtime artefacts
+node_modules/**
+*.vsix

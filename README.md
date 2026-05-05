@@ -81,6 +81,7 @@ Or simply close the editor panel or VS Code — the server is stopped automatica
 |---|---|---|---|
 | `datacontractEditor.port` | number | `9090` | Port for the local server |
 | `datacontractEditor.openIn` | `simpleBrowser` \| `externalBrowser` | `simpleBrowser` | Where to open the editor (set on first use via prompt) |
+| `datacontractEditor.schemaFile` | string | `""` | Absolute path to a custom ODCS JSON Schema file. When set, overrides the default public ODCS schema used for validation. |
 
 ---
 

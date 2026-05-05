@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { spawn, ChildProcess } from 'child_process';
+import * as net from 'net';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -136,6 +137,11 @@ async function startServer(
 ): Promise<void> {
   stopServer();
 
+  // stopServer() sends the kill signal asynchronously. The node server child
+  // needs a moment to call server.close() and release the socket. Poll until
+  // the port is free so the new process can bind it without EADDRINUSE.
+  await waitForPortFree(port, 5000);
+
   const npxPath = await resolveNpx();
   const args = buildNpxArgs(filePath, port);
   outputChannel.appendLine(`[Data Contract Editor] Starting: ${npxPath} ${args.join(' ')}`);
@@ -150,6 +156,21 @@ async function startServer(
   const nodeOptions = `${(process.env['NODE_OPTIONS'] ?? '').trim()} --require "${suppressScript}"`.trim();
 
   const extraEnv: Record<string, string> = { BROWSER: 'none', NODE_OPTIONS: nodeOptions };
+
+  const schemaFilePath = vscode.workspace
+    .getConfiguration('datacontractEditor')
+    .get<string>('schemaFile', '')
+    .trim();
+  if (schemaFilePath) {
+    if (fs.existsSync(schemaFilePath)) {
+      extraEnv['DATACONTRACT_SCHEMA_FILE'] = schemaFilePath;
+    } else {
+      vscode.window.showWarningMessage(
+        `Data Contract Editor: schema file not found: "${schemaFilePath}". Using default ODCS schema.`
+      );
+    }
+  }
+
   if (process.platform === 'win32') {
     // VS Code may not have the Node.js directory in its PATH. Since we already resolved
     // the absolute path to npx.cmd, node.exe is in the same directory — prepend it.
@@ -171,6 +192,10 @@ async function startServer(
 
   serverProcess = spawn(spawnCmd, spawnArgs, {
     shell: process.platform !== 'win32',
+    // detached puts the child in its own process group on Linux/macOS so that
+    // killProcessTree can send SIGTERM to the whole group (shell + npx + node).
+    // Not used on Windows where taskkill /T handles the tree instead.
+    detached: process.platform !== 'win32',
     cwd: filePath ? path.dirname(filePath) : undefined,
     env: { ...process.env, ...extraEnv },
   });
@@ -249,11 +274,38 @@ function waitForServerUrl(proc: ChildProcess, timeoutMs: number): Promise<number
   });
 }
 
+function waitForPortFree(port: number, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  const poll = (resolve: () => void) => {
+    const probe = net.createServer();
+    probe.once('error', () => {
+      if (Date.now() < deadline) {
+        setTimeout(() => poll(resolve), 100);
+      } else {
+        resolve(); // give up — let the new server fail with EADDRINUSE if it must
+      }
+    });
+    probe.once('listening', () => probe.close(resolve));
+    probe.listen(port, '127.0.0.1');
+  };
+  return new Promise(poll);
+}
+
 function killProcessTree(proc: ChildProcess): void {
   if (process.platform === 'win32' && proc.pid !== undefined) {
     // proc.kill() only kills the cmd.exe wrapper; the child node.exe survives and
     // keeps the port bound. taskkill /T terminates the entire process tree.
     spawn('taskkill', ['/F', '/T', '/PID', String(proc.pid)], { stdio: 'ignore' });
+  } else if (proc.pid !== undefined) {
+    // On Linux/macOS the server runs as sh → npx → node. Killing only the shell
+    // orphans the grandchild node process which keeps the port bound.
+    // We spawn with detached:true so the shell is a process-group leader; sending
+    // SIGTERM to the negative PID terminates every process in that group.
+    try {
+      process.kill(-proc.pid, 'SIGTERM');
+    } catch {
+      proc.kill();
+    }
   } else {
     proc.kill();
   }
@@ -399,6 +451,50 @@ cp.spawn = function(cmd, args, opts) {
   }
   return _spawn(cmd, args, opts);
 };
+
+// Custom schema: if DATACONTRACT_SCHEMA_FILE is set, wrap http.createServer to
+// (a) serve the schema JSON at /api/custom-schema.json, and
+// (b) inject schemaUrl:"/api/custom-schema.json" into every init() call in HTML responses.
+const schemaFile = process.env.DATACONTRACT_SCHEMA_FILE;
+if (schemaFile) {
+  const fs = require('fs');
+  let schemaJson;
+  try {
+    schemaJson = fs.readFileSync(schemaFile, 'utf8');
+    JSON.parse(schemaJson); // validate
+  } catch (e) {
+    schemaJson = null;
+  }
+  if (schemaJson) {
+    const http = require('http');
+    const _createServer = http.createServer;
+    http.createServer = function(listener) {
+      return _createServer.call(this, function(req, res) {
+        const url = (req.url || '/').split('?')[0];
+        if (url === '/api/custom-schema.json') {
+          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(schemaJson);
+          return;
+        }
+        // Wrap res.end to inject schemaUrl before the HTML is flushed.
+        // The server writes headers + body in a single res.end() call so there
+        // is no risk of a stale Content-Length: Node sets it automatically.
+        const origEnd = res.end.bind(res);
+        res.end = function(chunk, encoding, cb) {
+          if (chunk && typeof chunk !== 'function') {
+            const str = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+            if (str.includes('<html') && str.includes('init({')) {
+              const patched = str.replace(/\\binit\\s*\\(\\s*\\{/, 'init({schemaUrl:"/api/custom-schema.json",');
+              return origEnd(patched, encoding, cb);
+            }
+          }
+          return origEnd(chunk, encoding, cb);
+        };
+        listener(req, res);
+      });
+    };
+  }
+}
 `
   );
 

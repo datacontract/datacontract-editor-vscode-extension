@@ -86,6 +86,11 @@
           ],
           "default": "simpleBrowser",
           "description": "Where to open the Data Contract Editor. You are asked once on first use; change this setting to switch at any time."
+        },
+        "datacontractEditor.schemaFile": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Absolute path to a custom ODCS JSON Schema file. When set, the editor uses this schema for validation instead of the default public ODCS schema. Example: `/home/user/schemas/my-odcs.json` or `C:\\schemas\\my-odcs.json`."
         }
       }
     }

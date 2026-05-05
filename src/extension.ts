@@ -93,6 +93,42 @@ async function resolveOpenIn(): Promise<'simpleBrowser' | 'externalBrowser' | un
   return choice.value;
 }
 
+function resolveNpx(): Promise<string> {
+  if (process.platform !== 'win32') {
+    return Promise.resolve('npx');
+  }
+  // VS Code on Windows may inherit a PATH that doesn't include the Node.js directory.
+  // Use `where` (always in System32) to locate npx.cmd, then fall back to common paths.
+  return new Promise((resolve) => {
+    const probe = spawn('where', ['npx.cmd'], { shell: true });
+    let found = '';
+    probe.stdout?.on('data', (d: Buffer) => { found += d.toString(); });
+    probe.on('close', () => {
+      const first = found.trim().split(/\r?\n/)[0].trim();
+      if (first) {
+        outputChannel.appendLine(`[Data Contract Editor] npx resolved to: ${first}`);
+        resolve(first);
+        return;
+      }
+      // where failed — try common install locations
+      const candidates = [
+        path.join(process.env['ProgramFiles'] ?? 'C:\\Program Files', 'nodejs', 'npx.cmd'),
+        path.join(process.env['APPDATA'] ?? os.homedir(), 'npm', 'npx.cmd'),
+        path.join(os.homedir(), 'AppData', 'Roaming', 'npm', 'npx.cmd'),
+      ];
+      for (const c of candidates) {
+        if (fs.existsSync(c)) {
+          outputChannel.appendLine(`[Data Contract Editor] npx resolved to: ${c}`);
+          resolve(c);
+          return;
+        }
+      }
+      outputChannel.appendLine('[Data Contract Editor] npx not found via where or common paths; falling back to "npx"');
+      resolve('npx');
+    });
+  });
+}
+
 async function startServer(
   filePath: string | undefined,
   port: number,
@@ -100,29 +136,43 @@ async function startServer(
 ): Promise<void> {
   stopServer();
 
+  const npxPath = await resolveNpx();
   const args = buildNpxArgs(filePath, port);
-  outputChannel.appendLine(`[Data Contract Editor] Starting: npx ${args.join(' ')}`);
+  outputChannel.appendLine(`[Data Contract Editor] Starting: ${npxPath} ${args.join(' ')}`);
   if (filePath) {
     outputChannel.appendLine(`[Data Contract Editor] File: ${filePath}`);
   }
 
   const dir = getBrowserSuppressDir();
-  const suppressScript = path.join(dir, 'suppress-browser.cjs');
+  // Use forward slashes and quote the path so NODE_OPTIONS survives spaces in usernames
+  const suppressScript = dir.replace(/\\/g, '/') + '/suppress-browser.cjs';
   // Append to any existing NODE_OPTIONS so we don't clobber user settings
-  const nodeOptions = `${(process.env['NODE_OPTIONS'] ?? '').trim()} --require ${suppressScript}`.trim();
+  const nodeOptions = `${(process.env['NODE_OPTIONS'] ?? '').trim()} --require "${suppressScript}"`.trim();
 
-  serverProcess = spawn('npx', args, {
-    shell: true,
+  const extraEnv: Record<string, string> = { BROWSER: 'none', NODE_OPTIONS: nodeOptions };
+  if (process.platform === 'win32') {
+    // VS Code may not have the Node.js directory in its PATH. Since we already resolved
+    // the absolute path to npx.cmd, node.exe is in the same directory — prepend it.
+    // Find the actual key name Windows uses ("Path", not "PATH") to avoid duplicate keys.
+    const pathKey = Object.keys(process.env).find(k => k.toLowerCase() === 'path') ?? 'Path';
+    const nodeDir = path.dirname(npxPath);
+    extraEnv[pathKey] = `${nodeDir}${path.delimiter}${process.env[pathKey] ?? ''}`;
+  } else {
+    // Prepend no-op shell stubs dir so xdg-open / wslview resolve to our stubs
+    extraEnv['PATH'] = `${dir}${path.delimiter}${process.env['PATH'] ?? ''}`;
+  }
+
+  // On Windows, .cmd files require cmd.exe to execute — use it explicitly with the
+  // resolved absolute path so we are independent of whatever PATH VS Code inherited.
+  const [spawnCmd, spawnArgs] =
+    process.platform === 'win32'
+      ? (['cmd.exe', ['/c', npxPath, ...args]] as const)
+      : (['npx', args] as const);
+
+  serverProcess = spawn(spawnCmd, spawnArgs, {
+    shell: process.platform !== 'win32',
     cwd: filePath ? path.dirname(filePath) : undefined,
-    env: {
-      ...process.env,
-      // PATH wrappers catch xdg-open / wslview on non-WSL Linux
-      PATH: `${dir}${path.delimiter}${process.env['PATH'] ?? ''}`,
-      BROWSER: 'none',
-      // Preload script patches child_process.spawn to block powershell.exe / xdg-open
-      // before the `open` npm package can invoke them — works on WSL2 and plain Linux
-      NODE_OPTIONS: nodeOptions,
-    },
+    env: { ...process.env, ...extraEnv },
   });
 
   serverProcess.on('error', (err: Error) => {
@@ -199,6 +249,16 @@ function waitForServerUrl(proc: ChildProcess, timeoutMs: number): Promise<number
   });
 }
 
+function killProcessTree(proc: ChildProcess): void {
+  if (process.platform === 'win32' && proc.pid !== undefined) {
+    // proc.kill() only kills the cmd.exe wrapper; the child node.exe survives and
+    // keeps the port bound. taskkill /T terminates the entire process tree.
+    spawn('taskkill', ['/F', '/T', '/PID', String(proc.pid)], { stdio: 'ignore' });
+  } else {
+    proc.kill();
+  }
+}
+
 function stopServer(): void {
   // Null out webviewPanel before disposing to avoid re-entrant calls from onDidDispose
   if (webviewPanel) {
@@ -208,7 +268,7 @@ function stopServer(): void {
   }
   if (serverProcess) {
     outputChannel.appendLine('[Data Contract Editor] Stopping server…');
-    serverProcess.kill();
+    killProcessTree(serverProcess);
     serverProcess = undefined;
   }
   if (currentPort !== undefined) {
@@ -305,25 +365,37 @@ function getBrowserSuppressDir(): string {
   }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dce-noopen-'));
 
-  // No-op shell wrappers for PATH-based lookup on non-WSL Linux
-  const noop = '#!/bin/sh\nexit 0\n';
-  for (const name of ['xdg-open', 'wslview', 'sensible-browser', 'gnome-open']) {
-    fs.writeFileSync(path.join(dir, name), noop, { mode: 0o755 });
+  // No-op shell wrappers for PATH-based lookup on non-WSL Linux (not needed on Windows)
+  if (process.platform !== 'win32') {
+    const noop = '#!/bin/sh\nexit 0\n';
+    for (const name of ['xdg-open', 'wslview', 'sensible-browser', 'gnome-open']) {
+      fs.writeFileSync(path.join(dir, name), noop, { mode: 0o755 });
+    }
   }
 
   // Preload script injected via NODE_OPTIONS=--require.
   // Patches child_process.spawn before any module code runs, so when the `open`
-  // npm package calls spawn('powershell.exe', ...) or spawn('xdg-open', ...) to
-  // open the browser, we silently replace it with /bin/true.
+  // npm package calls spawn('powershell.exe', ...) or spawn('cmd /c start', ...) or
+  // spawn('xdg-open', ...) to open the browser, we silently replace it with a no-op.
   fs.writeFileSync(
     path.join(dir, 'suppress-browser.cjs'),
     `'use strict';
 const cp = require('child_process');
 const _spawn = cp.spawn.bind(cp);
-const BLOCKED = ['powershell', 'wslview', 'xdg-open', 'explorer', 'sensible-browser', 'gnome-open'];
+const isWin = process.platform === 'win32';
+// On Windows the no-op is "cmd /c exit 0"; on POSIX it is "/bin/true"
+const NOOP = isWin ? ['cmd.exe', ['/c', 'exit', '0']] : ['/bin/true', []];
+const BLOCKED = ['powershell', 'wslview', 'xdg-open', 'explorer.exe', 'sensible-browser', 'gnome-open'];
 cp.spawn = function(cmd, args, opts) {
-  if (typeof cmd === 'string' && BLOCKED.some(b => cmd.toLowerCase().includes(b))) {
-    return _spawn('/bin/true', [], { stdio: 'ignore', detached: true });
+  if (typeof cmd === 'string') {
+    const c = cmd.toLowerCase();
+    if (BLOCKED.some(b => c.includes(b))) {
+      return _spawn(NOOP[0], NOOP[1], { stdio: 'ignore', detached: true });
+    }
+    // On Windows, the 'open' package uses: cmd.exe /c start "" <url>
+    if (isWin && (c === 'cmd' || c.endsWith('\\\\cmd.exe')) && Array.isArray(args) && args.includes('start')) {
+      return _spawn(NOOP[0], NOOP[1], { stdio: 'ignore', detached: true });
+    }
   }
   return _spawn(cmd, args, opts);
 };

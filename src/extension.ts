@@ -11,6 +11,7 @@ let serverProcess: ChildProcess | undefined;
 let statusBarItem: vscode.StatusBarItem;
 let outputChannel: vscode.OutputChannel;
 let currentPort: number | undefined;
+let currentFilePath: string | undefined;
 let suppressDir: string | undefined;
 let webviewPanel: vscode.WebviewPanel | undefined;
 
@@ -39,8 +40,12 @@ async function openEditor(uri?: vscode.Uri): Promise<void> {
   }
 
   if (serverProcess && !serverProcess.killed && currentPort) {
-    await showBrowser(currentPort, openIn);
-    return;
+    if (filePath === currentFilePath) {
+      // Same file — just bring the panel to front.
+      await showBrowser(currentPort, openIn);
+      return;
+    }
+    // Different file — fall through to restart the server with the new file.
   }
 
   const port = getConfiguredPort();
@@ -232,6 +237,7 @@ async function startServer(
 
   if (detectedPort !== undefined) {
     currentPort = detectedPort;
+    currentFilePath = filePath;
     setStatus(true, detectedPort);
     await showBrowser(detectedPort, openIn);
   } else {
@@ -327,6 +333,7 @@ function stopServer(): void {
     setStatus(false, currentPort);
     currentPort = undefined;
   }
+  currentFilePath = undefined;
 }
 
 async function showBrowser(

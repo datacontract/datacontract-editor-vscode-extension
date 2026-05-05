@@ -65,6 +65,8 @@ The extension will start a local server and open the editor. A status bar item (
 
 > **Tip:** Closing the editor panel also stops the local server.
 
+> **One file at a time:** The extension runs a single local server. Opening a second data contract while one is already open restarts the server with the new file — it is not possible to view two contracts side-by-side in the same VS Code window.
+
 ### Stop the server manually
 
 ```

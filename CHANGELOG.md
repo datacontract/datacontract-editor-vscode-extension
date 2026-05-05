@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - New setting `datacontractEditor.schemaFile`: set an absolute path to a custom ODCS JSON Schema file to use for validation instead of the default public schema. Implemented by intercepting the local server's HTTP responses to inject the custom schema URL, with no changes required to the `datacontract-editor` package.
+- Opening a different data contract while the editor is already active now restarts the server with the new file instead of silently staying on the previous one.
 
 ### Fixed
 - On Windows, closing the editor panel no longer leaves the background Node.js server process running. The extension now uses `taskkill /F /T` to terminate the entire process tree, so the port is properly released and a second data contract can be opened in the same VS Code session.

@@ -2,7 +2,7 @@
   "name": "vscode-datacontract-editor",
   "displayName": "Data Contract Editor",
   "description": "Open ODCS-compliant data contracts in the Data Contract Editor within VS Code",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "gkoenig",
   "license": "MIT",
   "icon": "resources/icon.png",

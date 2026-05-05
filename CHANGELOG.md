@@ -3,6 +3,11 @@
 All notable changes to this extension will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.1.2] - 2026-05-05
+
+### Fixed
+- On Windows, closing the editor panel no longer leaves the background Node.js server process running. The extension now uses `taskkill /F /T` to terminate the entire process tree, so the port is properly released and a second data contract can be opened in the same VS Code session.
+
 ## [0.1.0] - Unreleased
 
 ### Added

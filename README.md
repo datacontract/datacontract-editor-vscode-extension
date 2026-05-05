@@ -21,6 +21,7 @@ The editor provides a rich UI with Monaco-based YAML editing, schema validation,
 
 | Platform | Status |
 |---|---|
+| Windows 11 (native) | Tested |
 | Windows (WSL2) | Tested |
 | Linux (native) | Tested |
 | macOS | Not yet tested |

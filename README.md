@@ -32,8 +32,10 @@ The editor provides a rich UI with Monaco-based YAML editing, schema validation,
 
 ## Requirements
 
-- **Node.js 18+** and **npm** must be installed and available on your `PATH`
+- **Node.js 22+** and **npm** must be installed and available on your `PATH`
 - Internet access is required on first use (to download `datacontract-editor` via `npx`); subsequent runs use the npx cache
+
+> **Devcontainer users:** make sure your devcontainer image ships Node.js 22+. You can add `"features": { "ghcr.io/devcontainers/features/node:1": { "version": "22" } }` to your `devcontainer.json`, or switch to a base image that includes Node.js 22 (e.g. `mcr.microsoft.com/devcontainers/javascript-node:22`).
 
 ---
 
@@ -84,6 +86,7 @@ Or simply close the editor panel or VS Code — the server is stopped automatica
 | `datacontractEditor.port` | number | `9090` | Port for the local server |
 | `datacontractEditor.openIn` | `simpleBrowser` \| `externalBrowser` | `simpleBrowser` | Where to open the editor (set on first use via prompt) |
 | `datacontractEditor.schemaFile` | string | `""` | Absolute path to a custom ODCS JSON Schema file. When set, overrides the default public ODCS schema used for validation. |
+| `datacontractEditor.packageVersion` | string | `"latest"` | Version of the `datacontract-editor` npm package to use. Pin to a specific version (e.g. `0.1.4`) for compatibility with older Node.js runtimes or for reproducible installs. |
 
 ---
 
@@ -91,6 +94,11 @@ Or simply close the editor panel or VS Code — the server is stopped automatica
 
 **"Failed to start: ENOENT"**
 Node.js / npm is not on your PATH. Install Node.js from [nodejs.org](https://nodejs.org) and restart VS Code.
+
+**"Node.js 22 or later is required"**
+Your system or devcontainer has an older Node.js. Upgrade to Node.js 22+:
+- **Local machine:** use [nvm](https://github.com/nvm-sh/nvm) (`nvm install 22 && nvm use 22`) or download from [nodejs.org](https://nodejs.org).
+- **Devcontainer:** add `"ghcr.io/devcontainers/features/node:1": { "version": "22" }` to your `devcontainer.json` features and rebuild the container.
 
 **Port already in use**
 Another process is using the configured port. Stop it (`lsof -ti :9090 | xargs kill`) or change `datacontractEditor.port` in settings.

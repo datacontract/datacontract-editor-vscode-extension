@@ -135,11 +135,38 @@ function resolveNpx(): Promise<string> {
   });
 }
 
+function checkNodeVersion(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const probe = spawn('node', ['--version'], { shell: process.platform !== 'win32' });
+    let output = '';
+    probe.stdout?.on('data', (d: Buffer) => { output += d.toString(); });
+    probe.on('error', () => resolve(true)); // node not found — let npx surface its own error
+    probe.on('close', () => {
+      const match = output.trim().match(/^v(\d+)/);
+      if (!match) { resolve(true); return; }
+      const major = parseInt(match[1], 10);
+      if (major < 22) {
+        vscode.window.showErrorMessage(
+          `Data Contract Editor requires Node.js 22 or later. ` +
+          `Your system has ${output.trim()}. ` +
+          `Upgrade via nvm, your package manager, or — in a devcontainer — add ` +
+          `"ghcr.io/devcontainers/features/node:1": {"version": "22"} to devcontainer.json.`
+        );
+        resolve(false);
+      } else {
+        resolve(true);
+      }
+    });
+  });
+}
+
 async function startServer(
   filePath: string | undefined,
   port: number,
   openIn: 'simpleBrowser' | 'externalBrowser'
 ): Promise<void> {
+  if (!(await checkNodeVersion())) { return; }
+
   stopServer();
 
   // stopServer() sends the kill signal asynchronously. The node server child
@@ -410,8 +437,12 @@ function getConfiguredPort(): number {
 }
 
 function buildNpxArgs(filePath: string | undefined, port: number): string[] {
-  // datacontract-editor CLI: -p <port> [file]
-  const args = ['--yes', 'datacontract-editor', '-p', String(port)];
+  const version = vscode.workspace
+    .getConfiguration('datacontractEditor')
+    .get<string>('packageVersion', 'latest')
+    .trim();
+  const pkg = version && version !== 'latest' ? `datacontract-editor@${version}` : 'datacontract-editor';
+  const args = ['--yes', pkg, '-p', String(port)];
   if (filePath) {
     args.push(filePath);
   }

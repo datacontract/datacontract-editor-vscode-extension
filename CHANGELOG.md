@@ -3,6 +3,11 @@
 All notable changes to this extension will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.1.3] - 2026-05-06
+
+### Added
+- New setting `datacontractEditor.packageVersion`: pin the `datacontract-editor` npm package to a specific version (e.g. `0.1.4`) instead of always pulling `latest`. Useful for reproducible installs or compatibility with older Node.js runtimes.
+
 ## [0.1.2] - 2026-05-05
 
 ### Added

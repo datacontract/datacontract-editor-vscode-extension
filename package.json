@@ -91,6 +91,11 @@
           "type": "string",
           "default": "",
           "markdownDescription": "Absolute path to a custom ODCS JSON Schema file. When set, the editor uses this schema for validation instead of the default public ODCS schema. Example: `/home/user/schemas/my-odcs.json` or `C:\\schemas\\my-odcs.json`."
+        },
+        "datacontractEditor.packageVersion": {
+          "type": "string",
+          "default": "latest",
+          "markdownDescription": "Version of the `datacontract-editor` npm package to use. Defaults to `latest`. Pin to a specific version (e.g. `0.1.4`) if you need compatibility with an older Node.js runtime or want a stable, reproducible install."
         }
       }
     }

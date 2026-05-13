@@ -2,7 +2,7 @@
   "name": "vscode-datacontract-editor",
   "displayName": "Data Contract Editor",
   "description": "Open ODCS-compliant data contracts in the Data Contract Editor within VS Code",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "gkoenig",
   "license": "MIT",
   "icon": "resources/icon.png",
@@ -106,13 +106,15 @@
     "watch": "node esbuild.js --watch",
     "package": "vsce package",
     "publish": "vsce publish",
-    "lint": "eslint src --ext ts"
+    "lint": "eslint src"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.110.0",
     "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.28.0",
-    "typescript": "^5.9.3"
+    "eslint": "^9.39.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.59.3"
   }
 }

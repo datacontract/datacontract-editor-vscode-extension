@@ -3,6 +3,11 @@
 All notable changes to this extension will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.1.4] - 2026-05-06
+
+### Fixed
+- Webview showed an empty tab when the extension was used inside a devcontainer or over Remote SSH. The iframe URL is now resolved through `vscode.env.asExternalUri()`, which registers the port with VS Code's forwarding mechanism and returns the URL the webview renderer can actually reach. No change in behaviour for plain local VS Code.
+
 ## [0.1.3] - 2026-05-06
 
 ### Added

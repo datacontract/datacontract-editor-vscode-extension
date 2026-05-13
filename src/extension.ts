@@ -367,10 +367,15 @@ async function showBrowser(
   port: number,
   openIn: 'simpleBrowser' | 'externalBrowser'
 ): Promise<void> {
-  const url = `http://localhost:${port}`;
+  const rawUri = vscode.Uri.parse(`http://localhost:${port}`);
+  // In devcontainers/remote SSH, asExternalUri registers the port with VS Code's
+  // forwarding mechanism and returns the URL the webview renderer can actually reach.
+  // On plain local VS Code it is a no-op and returns the URI unchanged.
+  const resolvedUri = await vscode.env.asExternalUri(rawUri);
+  const url = resolvedUri.toString(true);
 
   if (openIn === 'externalBrowser') {
-    await vscode.env.openExternal(vscode.Uri.parse(url));
+    await vscode.env.openExternal(resolvedUri);
     return;
   }
 

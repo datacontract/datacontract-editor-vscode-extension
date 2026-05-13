@@ -1,5 +1,10 @@
 # Data Contract Editor for VS Code
 
+[![CI](https://github.com/gkoenig/vscode-datacontract-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/gkoenig/vscode-datacontract-editor/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/gkoenig/vscode-datacontract-editor/actions/workflows/codeql.yml/badge.svg)](https://github.com/gkoenig/vscode-datacontract-editor/actions/workflows/codeql.yml)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/gkoenig.vscode-datacontract-editor)](https://marketplace.visualstudio.com/items?itemName=gkoenig.vscode-datacontract-editor)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Opens [ODCS](https://datacontract.com/)-compliant data contracts in the [Data Contract Editor](https://github.com/datacontract/datacontract-editor) inside VS Code.
 
 The editor provides a rich UI with Monaco-based YAML editing, schema validation, and graph visualization — all launched on demand as a local server using `npx`. No global install required.

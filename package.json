@@ -109,12 +109,12 @@
     "lint": "eslint src"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.7.0",
     "@types/vscode": "^1.110.0",
     "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.28.0",
-    "eslint": "^9.39.4",
-    "typescript": "^5.9.3",
+    "eslint": "^10.3.0",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.3"
   }
 }

@@ -3,6 +3,18 @@
 All notable changes to this extension will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.1.5] - 2026-06-05
+
+### Changed
+- Updated repository metadata to the new GitHub location under the `datacontract` organization.
+- Updated CI and CodeQL badge links in `README.md` to the new repository location.
+
+### Fixed
+- Replaced the retired Visual Studio Marketplace badge endpoint with a maintained provider so the version badge renders correctly in `README.md`.
+
+### Dependencies
+- Bumped development dependencies via Dependabot update PRs.
+
 ## [0.1.4] - 2026-05-06
 
 ### Fixed

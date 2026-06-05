@@ -2,16 +2,16 @@
   "name": "vscode-datacontract-editor",
   "displayName": "Data Contract Editor",
   "description": "Open ODCS-compliant data contracts in the Data Contract Editor within VS Code",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "gkoenig",
   "license": "MIT",
   "icon": "resources/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gkoenig/vscode-datacontract-editor"
+    "url": "https://github.com/datacontract/datacontract-editor-vscode-extension"
   },
   "bugs": {
-    "url": "https://github.com/gkoenig/vscode-datacontract-editor/issues"
+    "url": "https://github.com/datacontract/datacontract-editor-vscode-extension/issues"
   },
   "engines": {
     "vscode": "^1.110.0"

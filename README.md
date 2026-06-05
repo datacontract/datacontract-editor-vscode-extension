@@ -1,13 +1,19 @@
 # Data Contract Editor for VS Code
 
-[![CI](https://github.com/gkoenig/vscode-datacontract-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/gkoenig/vscode-datacontract-editor/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/gkoenig/vscode-datacontract-editor/actions/workflows/codeql.yml/badge.svg)](https://github.com/gkoenig/vscode-datacontract-editor/actions/workflows/codeql.yml)
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/gkoenig.vscode-datacontract-editor)](https://marketplace.visualstudio.com/items?itemName=gkoenig.vscode-datacontract-editor)
+[![CI](https://github.com/datacontract/datacontract-editor-vscode-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/datacontract/datacontract-editor-vscode-extension/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/datacontract/datacontract-editor-vscode-extension/actions/workflows/codeql.yml/badge.svg)](https://github.com/datacontract/datacontract-editor-vscode-extension/actions/workflows/codeql.yml)
+[![Visual Studio Marketplace Version](https://vsmarketplacebadges.dev/version/gkoenig.vscode-datacontract-editor.svg)](https://marketplace.visualstudio.com/items?itemName=gkoenig.vscode-datacontract-editor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Opens [ODCS](https://datacontract.com/)-compliant data contracts in the [Data Contract Editor](https://github.com/datacontract/datacontract-editor) inside VS Code.
 
 The editor provides a rich UI with Monaco-based YAML editing, schema validation, and graph visualization — all launched on demand as a local server using `npx`. No global install required.
+
+## Why this extension
+
+- Edit ODCS data contracts in a purpose-built visual UI directly in VS Code.
+- Avoid global setup by launching Data Contract Editor on demand via `npx`.
+- Keep your workflow clean with automatic local server startup and shutdown.
 
 ---
 
@@ -22,19 +28,6 @@ The editor provides a rich UI with Monaco-based YAML editing, schema validation,
 
 ---
 
-## Platform compatibility
-
-| Platform | Status |
-|---|---|
-| Windows 11 (native) | Tested |
-| Windows (WSL2) | Tested |
-| Linux (native) | Tested |
-| macOS | Not yet tested |
-
-> macOS support is expected to work in principle (same Node.js / npx path), but has not been verified. If you try it, please [open an issue](https://github.com/gkoenig/vscode-datacontract-editor/issues) and let us know whether it works.
-
----
-
 ## Requirements
 
 - **Node.js 22+** and **npm** must be installed and available on your `PATH`
@@ -46,7 +39,7 @@ The editor provides a rich UI with Monaco-based YAML editing, schema validation,
 
 ## Installation
 
-Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Gerd-Koenig.vscode-datacontract-editor) or search for **"Data Contract Editor"** in the Extensions panel (`Ctrl+Shift+X`).
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=gkoenig.vscode-datacontract-editor) or search for **"Data Contract Editor"** in the Extensions panel (`Ctrl+Shift+X`).
 
 ---
 
@@ -84,11 +77,20 @@ Or simply close the editor panel or VS Code — the server is stopped automatica
 
 ---
 
+## Commands
+
+| Command | Description |
+|---|---|
+| `Data Contract: Open in Data Contract Editor` | Starts the local server (if needed) and opens the current YAML file in the editor. |
+| `Data Contract: Stop Data Contract Editor Server` | Stops the local server and closes the editor panel. |
+
+---
+
 ## Settings
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| `datacontractEditor.port` | number | `9090` | Port for the local server |
+| `datacontractEditor.port` | number | `4173` | Port for the local server |
 | `datacontractEditor.openIn` | `simpleBrowser` \| `externalBrowser` | `simpleBrowser` | Where to open the editor (set on first use via prompt) |
 | `datacontractEditor.schemaFile` | string | `""` | Absolute path to a custom ODCS JSON Schema file. When set, overrides the default public ODCS schema used for validation. |
 | `datacontractEditor.packageVersion` | string | `"latest"` | Version of the `datacontract-editor` npm package to use. Pin to a specific version (e.g. `0.1.4`) for compatibility with older Node.js runtimes or for reproducible installs. |
@@ -106,10 +108,23 @@ Your system or devcontainer has an older Node.js. Upgrade to Node.js 22+:
 - **Devcontainer:** add `"ghcr.io/devcontainers/features/node:1": { "version": "22" }` to your `devcontainer.json` features and rebuild the container.
 
 **Port already in use**
-Another process is using the configured port. Stop it (`lsof -ti :9090 | xargs kill`) or change `datacontractEditor.port` in settings.
+Another process is using the configured port. Stop it (`lsof -ti :4173 | xargs kill`) or change `datacontractEditor.port` in settings.
 
 **Server logs**
 Open the Output panel (`View → Output`) and select **Data Contract Editor** from the dropdown for detailed server output.
+
+---
+
+## Known issues
+
+- One VS Code window supports one running Data Contract Editor server instance at a time.
+- Opening a second contract while one is already open restarts the server with the new file.
+
+---
+
+## Release notes
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ---
 
@@ -118,8 +133,8 @@ Open the Output panel (`View → Output`) and select **Data Contract Editor** fr
 Contributions are welcome! Please open an issue before submitting a large pull request.
 
 ```bash
-git clone https://github.com/gkoenig/vscode-datacontract-editor
-cd vscode-datacontract-editor
+git clone https://github.com/datacontract/datacontract-editor-vscode-extension.git
+cd datacontract-editor-vscode-extension
 npm install
 ```
 
